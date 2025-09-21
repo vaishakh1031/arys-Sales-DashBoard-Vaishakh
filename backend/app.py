@@ -115,10 +115,6 @@ def top_customers():
     return jsonify(customer_data)
 
 
-# To run the app:
-# 1. Open your terminal
-# 2. Navigate to the `backend` directory
-# 3. Install dependencies: pip install Flask pandas Flask-Cors
-# 4. Run the command: python app.py
+
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
