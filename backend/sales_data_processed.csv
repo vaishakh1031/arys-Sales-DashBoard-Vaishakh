@@ -1,0 +1,11 @@
+ORDERNUMBER,SALES,ORDERDATE,PRODUCTLINE,COUNTRY,QUANTITYORDERED,CUSTOMERNAME,STATUS,YEAR,MONTH,QUARTER
+10107,2871.0,2003-02-24,Motorcycles,Usa,30,Land of Toys Inc.,Shipped,2003,2,1
+10121,2765.9,2003-05-07,Motorcycles,France,34,Reale Treno,Shipped,2003,5,2
+10134,3884.34,2003-07-01,Motorcycles,France,41,Lyon Souveniers,Shipped,2003,7,3
+10145,3746.7,2003-08-25,Motorcycles,Usa,45,Toys4GrownUps.com,Shipped,2003,8,3
+10159,5205.27,2003-10-10,Classic Cars,Usa,49,Corporate Gift Ideas Co.,Shipped,2003,10,4
+10168,3452.74,2003-10-28,Classic Cars,Usa,36,Technics Stores Inc.,Shipped,2003,10,4
+10180,2839.1,2003-11-11,Planes,France,29,Daedalus Designs Imports,Shipped,2003,11,4
+10188,5512.32,2003-11-18,Classic Cars,Finland,48,Herkku Gifts,Shipped,2003,11,4
+10201,2168.22,2003-12-01,Trucks And Buses,Usa,22,Mini Wheels Co.,Shipped,2003,12,4
+10211,4708.44,2004-01-15,Classic Cars,France,41,Auto Canal+ Petit,Shipped,2004,1,1
