@@ -40,7 +40,9 @@ def get_kpis():
         'average_order_value': f"${avg_order_value:,.2f}"
     }
     return jsonify(kpis)
-    # Endpoint 2: Sales Over Time (Monthly)
+
+
+# Endpoint 2: Sales Over Time (Monthly)
 @app.route('/api/sales_over_time', methods=['GET'])
 def sales_over_time():
     if df.empty:
@@ -115,3 +117,4 @@ def top_customers():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
+
