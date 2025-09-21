@@ -41,6 +41,7 @@ def get_kpis():
     }
     return jsonify(kpis)
 
+
 # Endpoint 2: Sales Over Time (Monthly)
 @app.route('/api/sales_over_time', methods=['GET'])
 def sales_over_time():
@@ -114,7 +115,6 @@ def top_customers():
     }
     return jsonify(customer_data)
 
-
-
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
+
