@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Data Dashboard</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom Google Font for better typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* A light grey background for a modern look */
+        }
+        .chart-container {
+            position: relative;
+            height: 350px;
+            width: 100%;
+        }
+        .kpi-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .chart-card {
+             background-color: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="antialiased text-gray-800">
+
+    <div class="min-h-screen p-4 sm:p-6 lg:p-8">
+        <header class="mb-8">
+            <h1 class="text-4xl font-bold text-gray-900">Sales Dashboard</h1>
+            <p class="text-lg text-gray-600 mt-1">An overview of sales performance.</p>
+        </header>
+
+        <!-- Error Banner for API connection issues -->
+        <div id="error-banner" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
+            <strong class="font-bold">Connection Error!</strong>
+            <span class="block sm:inline">Could not connect to the backend API at `http://127.0.0.1:5001`. Please make sure your Flask server (`app.py`) is running correctly.</span>
+        </div>
+
+        <main>
+            <!-- KPI Cards Section -->
+            <section id="kpi-section" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Skeleton loaders for KPIs -->
+                <div class="kpi-card animate-pulse bg-gray-200 h-32 rounded-xl"></div>
+                <div class="kpi-card animate-pulse bg-gray-200 h-32 rounded-xl"></div>
+                <div class="kpi-card animate-pulse bg-gray-200 h-32 rounded-xl"></div>
+                <div class="kpi-card animate-pulse bg-gray-200 h-32 rounded-xl"></div>
+            </section>
+
+            <!-- Charts Section -->
+            <section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Sales Over Time (Line Chart) -->
+                <div class="chart-card">
+                    <h2 class="text-xl font-semibold mb-4">Monthly Sales Revenue</h2>
+                    <div class="chart-container">
+                        <canvas id="salesOverTimeChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Product Line Distribution (Pie Chart) -->
+                <div class="chart-card">
+                    <h2 class="text-xl font-semibold mb-4">Sales by Product Line</h2>
+                    <div class="chart-container">
+                        <canvas id="productLineChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Order Status (Donut Chart) -->
+                <div class="chart-card">
+                    <h2 class="text-xl font-semibold mb-4">Order Status Distribution</h2>
+                    <div class="chart-container" style="height: 300px; width: 300px; margin: auto;">
+                        <canvas id="orderStatusChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Top Customers (Bar Chart) -->
+                <div class="chart-card">
+                    <h2 class="text-xl font-semibold mb-4">Top 5 Customers by Sales</h2>
+                    <div class="chart-container">
+                        <canvas id="topCustomersChart"></canvas>
+                    </div>
+                </div>
+
+                 <!-- Sales By Country (Bar Chart) -->
+                 <div class="chart-card lg:col-span-2">
+                    <h2 class="text-xl font-semibold mb-4">Top 10 Countries by Sales</h2>
+                    <div class="chart-container">
+                        <canvas id="salesByCountryChart"></canvas>
+                    </div>
+                </div>
+
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:5001/api';
+        
+        // A modern, vibrant color palette for charts
+        const CHART_COLORS = [
+            '#4f46e5', '#10b981', '#f97316', '#3b82f6', '#ec4899', '#8b5cf6', '#ef4444', '#f59e0b'
+        ];
+        const CHART_BG_COLORS = CHART_COLORS.map(color => `${color}33`); // Semi-transparent for fills
+
+        let apiConnectionFailed = false; // Flag to show the main error banner only once
+
+        // Utility to fetch data from the API
+        async function fetchData(endpoint) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/${endpoint}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error(`Could not fetch data from ${endpoint}:`, error);
+                if (!apiConnectionFailed) {
+                    const errorBanner = document.getElementById('error-banner');
+                    if (errorBanner) errorBanner.classList.remove('hidden');
+                    apiConnectionFailed = true;
+                }
+                return null;
+            }
+        }
+
+        // Helper to display an error message inside a chart's container
+        function displayChartError(canvasId, message) {
+            const canvas = document.getElementById(canvasId);
+            if (canvas) {
+                const container = canvas.parentElement;
+                container.innerHTML = `<div class="flex items-center justify-center h-full text-center text-gray-500 p-4">${message}</div>`;
+            }
+        }
+        
+        // Renders the Key Performance Indicator cards
+        async function renderKPIs() {
+            const kpis = await fetchData('kpis');
+            const kpiSection = document.getElementById('kpi-section');
+            kpiSection.innerHTML = ''; // Clear loading skeletons
+
+            if (!kpis) {
+                kpiSection.innerHTML = `<div class="col-span-1 sm:col-span-2 lg:col-span-4 kpi-card bg-red-50 text-red-700">
+                    <p class="font-bold">Error Loading KPIs</p>
+                    <p class="text-sm">Could not fetch key metrics. Please ensure the backend server is running.</p>
+                </div>`;
+                return;
+            }
+            
+            const kpiData = [
+                { title: 'Total Sales', value: kpis.total_sales, icon: '💰' },
+                { title: 'Total Orders', value: kpis.total_orders, icon: '📦' },
+                { title: 'Total Customers', value: kpis.total_customers, icon: '👥' },
+                { title: 'Average Order Value', value: kpis.average_order_value, icon: '🛒' }
+            ];
+
+            kpiData.forEach(kpi => {
+                const card = document.createElement('div');
+                card.className = 'kpi-card flex items-start justify-between';
+                card.innerHTML = `
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">${kpi.title}</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-1">${kpi.value}</p>
+                    </div>
+                    <div class="text-4xl">${kpi.icon}</div>
+                `;
+                kpiSection.appendChild(card);
+            });
+        }
+        
+        // Generic function to create a new Chart.js chart
+        function createChart(ctx, type, data, options = {}) {
+            return new Chart(ctx, { type, data, options });
+        }
+        
+        // Renders all the charts on the dashboard
+        async function renderCharts() {
+            // 1. Sales Over Time (Line Chart)
+            const salesOverTimeData = await fetchData('sales_over_time');
+            if (salesOverTimeData) {
+                const salesCtx = document.getElementById('salesOverTimeChart').getContext('2d');
+                createChart(salesCtx, 'line', {
+                    labels: salesOverTimeData.labels,
+                    datasets: [{
+                        label: 'Sales',
+                        data: salesOverTimeData.values,
+                        borderColor: CHART_COLORS[0],
+                        backgroundColor: CHART_BG_COLORS[0],
+                        fill: true,
+                        tension: 0.3,
+                        pointBackgroundColor: CHART_COLORS[0]
+                    }]
+                }, { responsive: true, maintainAspectRatio: false });
+            } else {
+                displayChartError('salesOverTimeChart', 'Failed to load sales over time data.');
+            }
+
+            // 2. Product Line (Pie Chart)
+            const productLineData = await fetchData('sales_by_productline');
+            if (productLineData) {
+                const productCtx = document.getElementById('productLineChart').getContext('2d');
+                createChart(productCtx, 'pie', {
+                    labels: productLineData.labels,
+                    datasets: [{
+                        label: 'Sales',
+                        data: productLineData.values,
+                        backgroundColor: CHART_COLORS,
+                    }]
+                }, { responsive: true, maintainAspectRatio: false });
+            } else {
+                 displayChartError('productLineChart', 'Failed to load product line data.');
+            }
+
+            // 3. Order Status (Doughnut Chart)
+            const orderStatusData = await fetchData('order_status');
+            if (orderStatusData) {
+                const statusCtx = document.getElementById('orderStatusChart').getContext('2d');
+                createChart(statusCtx, 'doughnut', {
+                    labels: orderStatusData.labels,
+                    datasets: [{
+                        data: orderStatusData.values,
+                        backgroundColor: [CHART_COLORS[1], CHART_COLORS[6], CHART_COLORS[3], CHART_COLORS[7]],
+                        hoverOffset: 4
+                    }]
+                }, { responsive: true, maintainAspectRatio: false, cutout: '60%' });
+            } else {
+                displayChartError('orderStatusChart', 'Failed to load order status data.');
+            }
+
+            // 4. Top Customers (Bar Chart)
+            const topCustomersData = await fetchData('top_customers');
+            if (topCustomersData) {
+                const customerCtx = document.getElementById('topCustomersChart').getContext('2d');
+                createChart(customerCtx, 'bar', {
+                    labels: topCustomersData.labels,
+                    datasets: [{
+                        label: 'Total Sales',
+                        data: topCustomersData.values,
+                        backgroundColor: CHART_BG_COLORS[2],
+                        borderColor: CHART_COLORS[2],
+                        borderWidth: 1
+                    }]
+                }, { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    indexAxis: 'y', // Creates a horizontal bar chart
+                    plugins: { legend: { display: false } }
+                });
+            } else {
+                displayChartError('topCustomersChart', 'Failed to load top customers data.');
+            }
+
+             // 5. Sales by Country (Bar Chart)
+            const salesByCountryData = await fetchData('sales_by_country');
+            if (salesByCountryData) {
+                const countryCtx = document.getElementById('salesByCountryChart').getContext('2d');
+                createChart(countryCtx, 'bar', {
+                    labels: salesByCountryData.labels,
+                    datasets: [{
+                        label: 'Total Sales',
+                        data: salesByCountryData.values,
+                        backgroundColor: CHART_BG_COLORS[4],
+                        borderColor: CHART_COLORS[4],
+                        borderWidth: 1
+                    }]
+                }, { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true }
+                    }
+                });
+            } else {
+                displayChartError('salesByCountryChart', 'Failed to load sales by country data.');
+            }
+        }
+
+        // Initialize the dashboard once the page content has loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            renderKPIs();
+            renderCharts();
+        });
+
+    </script>
+</body>
+</html>
+
