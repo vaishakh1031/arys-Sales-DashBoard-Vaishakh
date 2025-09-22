@@ -36,15 +36,25 @@ Frontend Dashboard: A single-page web application that fetches data from the API
 
 4. Project Structure
 sales-dashboard/
+
 ├── .gitignore
+
 ├── backend/
+
 │   ├── app.py
+
 │   └── sales_data_processed.csv  (Generated)
+
 ├── data_preprocessing/
+
 │   ├── Sales_Data_Preprocessing.ipynb
+
 │   └── sales_data.csv            (Raw data)
+
 ├── frontend/
+
 │   └── index.html
+
 └── README.md
 
 5. Setup and Run Instructions
